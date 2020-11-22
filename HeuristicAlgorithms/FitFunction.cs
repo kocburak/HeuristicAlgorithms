@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SezgiselAlgoritmalar
+namespace HeuristicAlgorithms
 {
     public interface IFitFunction
     {

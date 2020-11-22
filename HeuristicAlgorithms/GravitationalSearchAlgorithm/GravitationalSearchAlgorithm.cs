@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 
-namespace SezgiselAlgoritmalar
+namespace HeuristicAlgorithms
 {
-    public class GravitaionalSearchAlgorithm
+    public class GravitationalSearchAlgorithm
     {
 
         public IList<Iteration> Iterations;
@@ -16,15 +15,9 @@ namespace SezgiselAlgoritmalar
         public double MaxSearchValue;
         public IFitFunction Function;
 
-
         private readonly Random rand = new Random();
 
-        public double InitialGravitiyConstant;
-        public double GravityDecayRate;
-
-
-
-        public GravitaionalSearchAlgorithm(IFitFunction function, int numAgents, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
+        public GravitationalSearchAlgorithm(IFitFunction function, int numAgents, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
         {
             MaxIteration = maxIteration;
             NumAgents = numAgents;
@@ -86,7 +79,6 @@ namespace SezgiselAlgoritmalar
                         {
                             agent.Position[i] = MinSearchValue + (MaxSearchValue - MinSearchValue) * rand.NextDouble();
                         }
-
                     }
                 }
 
@@ -102,9 +94,9 @@ namespace SezgiselAlgoritmalar
 
                 CalculateGravField(currentIteration, gravitationalConst);
 
-                foreach(Agent agent in currentIteration.Agents)
+                foreach (Agent agent in currentIteration.Agents)
                 {
-                   // Console.WriteLine(agent.ToString());
+                    // Console.WriteLine(agent.ToString());
 
                 }
 
@@ -198,68 +190,6 @@ namespace SezgiselAlgoritmalar
                     agent.Position[i] += agent.Velocity[i]; //Equation (12) 	
                 }
             }
-
-
-        }
-    }
-
-    public class Agent : ICloneable
-    {
-        public double Mass;
-        public double[] Position;
-        public double[] Velocity;
-        public double[] TotalGravitaionalField;
-        public double Fittness;
-
-        public object Clone()
-        {
-            return new Agent
-            {
-                Mass = this.Mass,
-                Fittness = this.Fittness,
-                Position = this.Position.Select(p => p).ToArray(),
-                Velocity = this.Velocity.Select(p => p).ToArray(),
-                TotalGravitaionalField = this.TotalGravitaionalField.Select(p => p).ToArray(),
-            };
-
-        }
-
-        public override string ToString()
-        {
-            StringBuilder builder = new StringBuilder();
-
-            builder.Append("Agent => \nFittness : ");
-
-
-            builder.Append(Fittness);
-            builder.Append("\n");
-            for (int i = 0; i < Position.Length; i++)
-            {
-
-                builder.Append("x[");
-                builder.Append(i);
-                builder.Append("] = ");
-                builder.Append(Position[i]);
-                builder.Append(" ");
-                builder.Append("\n");
-            }
-
-
-
-            return builder.ToString();
-        }
-    }
-
-    public class Iteration : ICloneable
-    {
-        public List<Agent> Agents;
-
-        public object Clone()
-        {
-            return new Iteration
-            {
-                Agents = this.Agents.Select(a => (Agent)a.Clone()).ToList()
-            };
         }
     }
 }

@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-namespace SezgiselAlgoritmalar
+namespace HeuristicAlgorithms
 {
     class Program
     {
         static void Main(string[] args)
         {
-            GravitaionalSearchAlgorithm algorithm = new GravitaionalSearchAlgorithm(new f37(), 10, 30, 5000, -5.12, 5.12);
+            GravitationalSearchAlgorithm algorithm = new GravitationalSearchAlgorithm(new f37(), 10, 30, 5000, -5.12, 5.12);
             algorithm.FindSolution();
             var last = algorithm.Iterations[algorithm.Iterations.Count - 1].Agents;
             Console.WriteLine("Best Fittness: " + algorithm.Iterations.Min(A => A.Agents.Min(q => q.Fittness)));
