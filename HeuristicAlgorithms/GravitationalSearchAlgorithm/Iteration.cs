@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace HeuristicAlgorithms
+namespace HeuristicAlgorithms.GSA
 {
-    public class Iteration : ICloneable
+    public class Iteration<T> : ICloneable where T : ICloneable
     {
-        public List<Agent> Agents;
+        public List<T> Agents;
 
         public object Clone()
         {
-            return new Iteration
+            return new Iteration<T>
             {
-                Agents = this.Agents.Select(a => (Agent)a.Clone()).ToList()
+                Agents = this.Agents.Select(a => (T)a.Clone()).ToList()
             };
         }
     }

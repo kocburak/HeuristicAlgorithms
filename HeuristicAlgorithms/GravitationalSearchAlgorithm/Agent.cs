@@ -2,7 +2,7 @@
 using System.Text;
 using System.Linq;
 
-namespace HeuristicAlgorithms
+namespace HeuristicAlgorithms.GSA
 {
     public class Agent : ICloneable
     {

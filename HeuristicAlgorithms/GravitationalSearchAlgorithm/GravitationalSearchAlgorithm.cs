@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace HeuristicAlgorithms
+namespace HeuristicAlgorithms.GSA
 {
     public class GravitationalSearchAlgorithm
     {
 
-        public IList<Iteration> Iterations;
+        public IList<Iteration<Agent>> Iterations;
         public int MaxIteration;
         public int NumAgents;
         public int NumDimensions;
@@ -38,17 +38,12 @@ namespace HeuristicAlgorithms
             return Math.Sqrt(sumOfSquares);
         }
 
-        public void CalculateTotalForceForAgent(Agent agent)
-        {
-
-        }
-
         public double CalculateGravitationalConstant()
         {
             return 100.0 * Math.Exp(-20.0 * (Iterations.Count - 1) / MaxIteration); //Equation 28
         }
 
-        public void CalcultateFitness(Iteration iteration)
+        public void CalcultateFitness(Iteration<Agent> iteration)
         {
             double[] fittness = new double[NumAgents];
             foreach (Agent agent in iteration.Agents)
@@ -59,11 +54,11 @@ namespace HeuristicAlgorithms
 
         public void FindSolution()
         {
-            var firstIteration = new Iteration
+            var firstIteration = new Iteration<Agent>
             {
                 Agents = GenerateRandomAgents()
             };
-            Iterations = new List<Iteration>
+            Iterations = new List<Iteration<Agent>>
             {
                 firstIteration
             };
@@ -101,7 +96,7 @@ namespace HeuristicAlgorithms
                 }
 
 
-                Iterations.Add((Iteration)currentIteration.Clone());
+                Iterations.Add((Iteration<Agent>)currentIteration.Clone());
 
                 currentIteration = Iterations[Iterations.Count - 1];
 
@@ -111,7 +106,7 @@ namespace HeuristicAlgorithms
 
         }
 
-        public void CalculateGravField(Iteration iteration, double gravitationalConst)
+        public void CalculateGravField(Iteration<Agent> iteration, double gravitationalConst)
         {
             double epsilon = 0.001;
 
@@ -126,7 +121,7 @@ namespace HeuristicAlgorithms
                         double R = CalculateEuclidianDistance(agent1, agent2);
                         for (int k = 0; k < NumDimensions; k++)
                         {
-                            agent1.TotalGravitaionalField[k] += rand.NextDouble() * agent2.Mass * ((agent2.Position[k] - agent1.Position[k]) / ((R * R) + epsilon));
+                            agent1.TotalGravitaionalField[k] += rand.NextDouble() * agent2.Mass * ((agent2.Position[k] - agent1.Position[k]) / (R + epsilon));
                         } //Equation 7
                     }
                 }
@@ -141,7 +136,7 @@ namespace HeuristicAlgorithms
             }
         }
 
-        private void CalculateMass(Iteration iteration, double betsFittness, double worstFittness)
+        private void CalculateMass(Iteration<Agent> iteration, double betsFittness, double worstFittness)
         {
             foreach (Agent agent in iteration.Agents)
             {
@@ -179,7 +174,7 @@ namespace HeuristicAlgorithms
             return agents;
         }
 
-        public void Movements(Iteration iteration)
+        public void Movements(Iteration<Agent> iteration)
         {
 
             foreach (Agent agent in iteration.Agents)

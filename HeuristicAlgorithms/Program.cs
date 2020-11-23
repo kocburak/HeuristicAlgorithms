@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HeuristicAlgorithms.GSA;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 namespace HeuristicAlgorithms
@@ -7,7 +8,7 @@ namespace HeuristicAlgorithms
     {
         static void Main(string[] args)
         {
-            GravitationalSearchAlgorithm algorithm = new GravitationalSearchAlgorithm(new f37(), 10, 30, 5000, -5.12, 5.12);
+            GravitationalSearchAlgorithm algorithm = new GravitationalSearchAlgorithm(new f37(), 10, 2, 5000, -5.12, 5.12);
             algorithm.FindSolution();
             var last = algorithm.Iterations[algorithm.Iterations.Count - 1].Agents;
             Console.WriteLine("Best Fittness: " + algorithm.Iterations.Min(A => A.Agents.Min(q => q.Fittness)));
