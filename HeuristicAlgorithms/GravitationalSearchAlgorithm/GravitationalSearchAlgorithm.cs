@@ -45,7 +45,6 @@ namespace HeuristicAlgorithms.GSA
 
         public void CalcultateFitness(Iteration<Agent> iteration)
         {
-            double[] fittness = new double[NumAgents];
             foreach (Agent agent in iteration.Agents)
             {
                 agent.Fittness = Function.Calculate(agent.Position);
