@@ -12,6 +12,7 @@ namespace HeuristicAlgorithms.ICA
         public IList<Decade> Iterations;
         public int NumCountry;
         public int NumImperialist;
+
         public int MaxIteration;
         public int NumDimensions;
         public double MinSearchValue;
@@ -20,51 +21,146 @@ namespace HeuristicAlgorithms.ICA
 
         private readonly Random rand = new Random();
 
-        private double AssimilationCoeff = 2;
+        private double AssimilationCoeff = 4; // Beta
+        private double RevolutionRate = 0.02;
+        private double zeta = 0.02; // Total Cost of Empire = Cost of Imperialist + Zeta * mean(Cost of All Colonies)
 
-        public void FindSolution()
+        public ImperialistCompetitiveAlgorithm(IFitFunction function, int numCountry, int numImperialist, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
         {
-            List<Country> Countries = GenerateRandomCountry();
-
-            CalcultateCosts(Countries);
-
-            CalculateNormalizedCosts(Countries);
-
-            CalculateNormalizedPower(Countries);
-
-            IEnumerable<Country> Imperialists = SelectImperialists(Countries);
-
-            AssignCountriesToImperialists(Countries, Imperialists);
-
-            MoveColonies(Imperialists);
-
-            //End First Iteration
-
-
-            CalcultateCosts(Imperialists);
-            Imperialists = SwapIfColonyBetterThanImperialist(Imperialists);
+            MaxIteration = maxIteration;
+            NumCountry = numCountry;
+            NumDimensions = numDimensions;
+            MinSearchValue = minSearchValue;
+            MaxSearchValue = maxSearchValue;
+            Function = function;
+            NumImperialist = numImperialist;
 
         }
 
-        private IEnumerable<Country> SwapIfColonyBetterThanImperialist(IEnumerable<Country> Imperialists)
+        public void FindSolution()
         {
-            var newImperialists = new List<Country>();
-            foreach (Country imperialist in Imperialists)
+            List<Country> Countries = GenerateRandomCountry(NumCountry);
+
+
+            CalculateCosts(Countries);
+
+            List<Empire> Imperialists = SelectImperialists(Countries);
+
+            CalculatePower(Imperialists);
+
+            CalculateNormalizedPower(Imperialists);
+
+            AssignCountriesToImperialists(Countries, Imperialists);
+
+            Iterations = new List<Decade>();
+
+            while (Iterations.Count < MaxIteration)
+            {
+
+                CalculateCosts(Imperialists);
+
+                CalculatePower(Imperialists);
+
+                CalculateNormalizedPower(Imperialists);
+
+                Iterations.Add(new Decade()
+                {
+                    Imperialists = Imperialists.Select(i => (Empire) i.Clone()).ToList()
+                });
+
+
+                MoveColonies(Imperialists);
+
+                Imperialists = SwapIfColonyBetterThanImperialist(Imperialists);
+
+                Revolution(Imperialists);
+
+                ImperialisticCompetition(Imperialists);
+
+                //CalcultateCosts(Imperialists);
+
+
+            }
+
+
+        }
+
+        private void ImperialisticCompetition(IList<Empire> Imperialists)
+        {
+            foreach (Empire imperialist in Imperialists)
+            {
+                imperialist.PowerOfEmpire = imperialist.Cost + zeta * imperialist.Colonies.Select(c => c.Cost).Average();
+            }
+
+
+            foreach (Empire imperialist in Imperialists)
+            {
+                imperialist.NormalizedPowerOfEmpire = Imperialists.Select(i => i.PowerOfEmpire).Max() - imperialist.PowerOfEmpire;
+            }
+
+            foreach (Empire imperialist in Imperialists)
+            {
+                imperialist.PossessionProbability = (imperialist.NormalizedPowerOfEmpire / Imperialists.Select(i => i.NormalizedPowerOfEmpire).Max()) - rand.NextDouble();
+            }
+
+            var weakestEmpire = Imperialists.OrderBy(i => i.PowerOfEmpire).FirstOrDefault();
+
+            var weakestColonyOfWeakestEmpire = weakestEmpire.Colonies.OrderBy(c => c.Cost).FirstOrDefault(); //TODO: minimization mı olduğu burda belli oluyor. Şuan maximizaiton
+
+
+            var strongestEmpire = Imperialists.OrderByDescending(i => i.PossessionProbability).FirstOrDefault();
+
+            weakestEmpire.Colonies.Remove(weakestColonyOfWeakestEmpire);
+            strongestEmpire.Colonies.Add(weakestColonyOfWeakestEmpire);
+
+
+            //Elimination of the weakest
+            if (weakestEmpire.Colonies.Count == 0)
+            {
+                Imperialists.Remove(weakestEmpire);
+                strongestEmpire.Colonies.Add(weakestEmpire);
+            }
+
+
+        }
+
+        private void Revolution(IEnumerable<Empire> Imperialists)
+        {
+            foreach (Empire imperialist in Imperialists)
+            {
+
+                var numRevolutionColonies = (int)Math.Round(RevolutionRate * imperialist.Colonies.Count);
+
+                for (int i = 0; i < numRevolutionColonies; i++)
+                {
+
+                    imperialist.Colonies.RemoveAt(rand.Next(0, imperialist.Colonies.Count - 1));
+
+                }
+
+                var newCountries = GenerateRandomCountry(numRevolutionColonies);
+
+                imperialist.Colonies.AddRange(newCountries);
+
+            }
+        }
+
+        private List<Empire> SwapIfColonyBetterThanImperialist(IEnumerable<Empire> Imperialists)
+        {
+            var newImperialists = new List<Empire>();
+            foreach (Empire imperialist in Imperialists)
             {
                 newImperialists.Add(imperialist);
             }
 
-            foreach (Country imperialist in Imperialists)
+            foreach (Empire imperialist in Imperialists)
             {
-
-                CalcultateCosts(imperialist.Colonies);
-
-                Country nextImperialist = null;
+                Empire nextImperialist = null;
                 foreach (Country colony in imperialist.Colonies)
                 {
                     if (nextImperialist == null || nextImperialist.Cost < colony.Cost)
                     {
-                        nextImperialist = colony;
+                        nextImperialist = new Empire(colony);
                     }
                 }
 
@@ -82,7 +178,7 @@ namespace HeuristicAlgorithms.ICA
 
         private void MoveColonies(IEnumerable<Country> Imperialists)
         {
-            foreach (Country imperialist in Imperialists)
+            foreach (Empire imperialist in Imperialists)
             {
                 foreach (Country colony in imperialist.Colonies)
                 {
@@ -95,20 +191,26 @@ namespace HeuristicAlgorithms.ICA
                     }
 
                 }
+
+                CalculateCosts(imperialist.Colonies);
             }
         }
 
-        private void AssignCountriesToImperialists(List<Country> Colonies, IEnumerable<Country> Imperialists)
+        private void AssignCountriesToImperialists(List<Country> Colonies, IEnumerable<Empire> Imperialists)
         {
+
             var totalNumColonies = NumCountry - NumImperialist;
             //Assign colonies to Emperialists randomly
-            foreach (Country imperialist in Imperialists)
+            foreach (Empire imperialist in Imperialists)
             {
+                imperialist.Colonies = new List<Country>();
 
-                var numOfColonies = Math.Round(imperialist.NormalizedPower * totalNumColonies);
+                var numOfColonies = (int)Math.Round(imperialist.NormalizedPower * totalNumColonies);
 
                 for (int i = 0; i < numOfColonies; i++)
                 {
+                    if (Colonies.Count == 0)
+                        Colonies = GenerateRandomCountry(numOfColonies - i);
 
                     var randomColony = Colonies[rand.Next(0, Colonies.Count - 1)];
 
@@ -116,26 +218,33 @@ namespace HeuristicAlgorithms.ICA
                     Colonies.Remove(randomColony);
                 }
             }
+
+            if (Colonies.Count > 0)
+                Imperialists.Last().Colonies.AddRange(Colonies);
+
         }
 
-        private IEnumerable<Country> SelectImperialists(List<Country> Colonies)
+        private List<Empire> SelectImperialists(List<Country> Colonies)
         {
 
             //initial Emperialists
-            var Imperialists = Colonies.OrderByDescending(c => c.NormalizedPower).Take(NumImperialist); //TODO: minimization mı olduğu burda belli oluyor. Şuan maximizaiton
+            var Imperialists = Colonies.OrderByDescending(c => c.Cost).Take(NumImperialist); //TODO: minimization mı olduğu burda belli oluyor. Şuan maximizaiton
+
+            var Imp = new List<Empire>();
 
             foreach (Country imperialist in Imperialists)
             {
                 Colonies.Remove(imperialist);
+                Imp.Add(new Empire(imperialist));
             }
 
-            return Imperialists;
+            return Imp;
         }
 
-        private List<Country> GenerateRandomCountry()
+        private List<Country> GenerateRandomCountry(int count)
         {
             List<Country> colonies = new List<Country>();
-            for (int i = 0; i < NumCountry; i++)
+            for (int i = 0; i < count; i++)
             {
                 var colony = new Country
                 {
@@ -153,7 +262,7 @@ namespace HeuristicAlgorithms.ICA
         }
 
 
-        public void CalcultateCosts(IEnumerable<Country> countries)
+        public void CalculateCosts(IEnumerable<Country> countries)
         {
             foreach (Country agent in countries)
             {
@@ -162,39 +271,27 @@ namespace HeuristicAlgorithms.ICA
 
         }
 
-        private static void CalculateNormalizedPower(List<Country> countries)
+        private static void CalculateNormalizedPower(IEnumerable<Empire> countries)
         {
-            var sumOfNormalizedCost = countries.Max(a => a.NormalizedCost);
+            var sumOfNormalizedCost = countries.Sum(a => a.Power);
 
-            foreach (Country agent in countries)
+            foreach (Empire agent in countries)
             {
-                agent.NormalizedPower = Math.Abs(agent.NormalizedCost / sumOfNormalizedCost);
+                agent.NormalizedPower = Math.Abs(agent.Power / sumOfNormalizedCost);
             }
         }
 
-        private static void CalculateNormalizedCosts(List<Country> countries)
+        private static void CalculatePower(IEnumerable<Empire> empires)
         {
-            var maxCost = countries.Max(a => a.Cost);
+            var maxCost = empires.Max(a => a.Cost);
 
-            foreach (Country agent in countries)
+            foreach (Empire agent in empires)
             {
-                agent.NormalizedCost = agent.Cost - maxCost;
+                if (maxCost > 0)
+                    agent.Power = 1.3 * maxCost - agent.Cost;
+                else
+                    agent.Power = 0.7 * maxCost - agent.Cost;
             }
-        }
-    }
-
-    public class Decade : ICloneable
-    {
-        public List<Country> Colonies;
-        public List<Country> Imperialists;
-
-        public object Clone()
-        {
-            return new Decade
-            {
-                Colonies = this.Colonies.Select(a => (Country)a.Clone()).ToList(),
-                Imperialists = this.Colonies.Select(a => (Country)a.Clone()).ToList()
-            };
         }
     }
 }
