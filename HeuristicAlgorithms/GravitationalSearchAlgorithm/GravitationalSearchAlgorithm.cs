@@ -43,7 +43,7 @@ namespace HeuristicAlgorithms.GSA
             return 100.0 * Math.Exp(-20.0 * (Iterations.Count - 1) / MaxIteration); //Equation 28
         }
 
-        public void CalcultateFitness(Iteration<Agent> iteration)
+        public void CalculateFitness(Iteration<Agent> iteration)
         {
             foreach (Agent agent in iteration.Agents)
             {
@@ -76,7 +76,7 @@ namespace HeuristicAlgorithms.GSA
                     }
                 }
 
-                CalcultateFitness(currentIteration);
+                CalculateFitness(currentIteration);
 
                 var bestFittnessAgent = currentIteration.Agents.OrderBy(a => a.Fittness).FirstOrDefault();
 
@@ -135,11 +135,11 @@ namespace HeuristicAlgorithms.GSA
             }
         }
 
-        private void CalculateMass(Iteration<Agent> iteration, double betsFittness, double worstFittness)
+        private void CalculateMass(Iteration<Agent> iteration, double bestFittness, double worstFittness)
         {
             foreach (Agent agent in iteration.Agents)
             {
-                agent.Mass = (agent.Fittness - worstFittness) / (betsFittness - worstFittness);
+                agent.Mass = (agent.Fittness - worstFittness) / (bestFittness - worstFittness);
             }
 
             double totalMass = iteration.Agents.Select(a => a.Mass).Sum();

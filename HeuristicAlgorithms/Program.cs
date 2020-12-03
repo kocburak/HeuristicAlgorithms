@@ -1,4 +1,5 @@
-﻿using HeuristicAlgorithms.GSA;
+﻿using HeuristicAlgorithms.GBMO;
+using HeuristicAlgorithms.GSA;
 using HeuristicAlgorithms.ICA;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ namespace HeuristicAlgorithms
 {
     class Program
     {
+
         static void Main(string[] args)
         {
 
@@ -20,12 +22,22 @@ namespace HeuristicAlgorithms
             Console.WriteLine("Best Agent: " + algorithm.Iterations.OrderBy(i => i.Agents.Min(q => q.Fittness)).FirstOrDefault().Agents.OrderBy(a => a.Fittness).FirstOrDefault().ToString());
             Console.ReadKey();*/
 
-            ImperialistCompetitiveAlgorithm algorithm = new ImperialistCompetitiveAlgorithm(new f37(), 10, 2, 2, 5000, -5.12, 5.12);
+
+
+            /*ImperialistCompetitiveAlgorithm algorithm = new ImperialistCompetitiveAlgorithm(new f37(), 10, 2, 2, 5000, -5.12, 5.12);
             algorithm.FindSolution();
 
             var last = algorithm.Iterations[algorithm.Iterations.Count - 1].Imperialists;
             Console.WriteLine("Best Fittness: " + algorithm.Iterations.Max(A => A.Imperialists.Max(q => q.Colonies.Max(w => w.Cost))));
             Console.WriteLine("Best Agent: " + algorithm.Iterations.OrderByDescending(i => i.Imperialists.Max(b => b.Cost)).FirstOrDefault().Imperialists.OrderByDescending(a => a.Cost).FirstOrDefault());
+            Console.ReadKey();*/
+
+            GasesBrownianMotionOptimization algorithm = new GasesBrownianMotionOptimization(new f37(), 10, 2, 5000, -5.12, 5.12);
+            algorithm.FindSolution();
+
+            var last = algorithm.Iterations[algorithm.Iterations.Count - 1].Agents;
+            Console.WriteLine("Best Fittness: " + algorithm.Iterations.Max(A => A.Agents.Max(q => q.Fittness)));
+            Console.WriteLine("Best Agent: " + algorithm.Iterations.SelectMany(a=> a.Agents).OrderByDescending(i => i.Fittness).FirstOrDefault());
             Console.ReadKey();
         }
 
