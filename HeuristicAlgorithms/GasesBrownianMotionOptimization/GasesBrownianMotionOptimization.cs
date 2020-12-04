@@ -7,7 +7,7 @@ namespace HeuristicAlgorithms.GBMO
 {
     public class GasesBrownianMotionOptimization
     {
-        public IList<Iteration<Molecule>> Iterations;
+        public IList<CustomIteration> Iterations;
         public int MaxIteration;
         public int NumAgents;
         public int NumDimensions;
@@ -20,7 +20,7 @@ namespace HeuristicAlgorithms.GBMO
 
 
         private double Temperature = 297;
-        private double BoltzmanConstant = 1.38e-23;
+        private double BoltzmanConstant = 1.38e-4;
 
         public GasesBrownianMotionOptimization(IFitFunction function, int numAgents, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
         {
@@ -41,22 +41,32 @@ namespace HeuristicAlgorithms.GBMO
 
             CalculateMass(molecules);
 
-            var firstIteration = new Iteration<Molecule>
+            var firstIteration = new CustomIteration
             {
                 Agents = molecules
             };
 
-            Iterations = new List<Iteration<Molecule>>
+            Iterations = new List<CustomIteration>
             {
-                (Iteration<Molecule>) firstIteration.Clone()
+                (CustomIteration) firstIteration.Clone()
             };
 
-            var currentIteration = firstIteration;
 
-
-            while (Iterations.Count <= MaxIteration)
+            while (Iterations.Count <= MaxIteration && Temperature >= 0)
             {
                 Movements(molecules);
+
+
+                foreach (Molecule agent in molecules)
+                {
+                    for (int i = 0; i < agent.Position.Length; i++)
+                    {
+                        if (agent.Position[i] < MinSearchValue || agent.Position[i] > MaxSearchValue)
+                        {
+                            agent.Position[i] = MinSearchValue + (MaxSearchValue - MinSearchValue) * rand.NextDouble();
+                        }
+                    }
+                }
 
                 CalculateFitness(molecules);
 
@@ -64,17 +74,33 @@ namespace HeuristicAlgorithms.GBMO
 
                 CalculateTemperature(molecules);
 
-                Iterations.Add((Iteration<Molecule>)currentIteration.Clone());
+                Iterations.Add(new CustomIteration() { Agents =  molecules.Select(a => (Molecule)a.Clone()).ToList(), Temperature = this.Temperature });
 
-                currentIteration = Iterations[Iterations.Count - 1];
             }
         }
 
         private void CalculateTemperature(List<Molecule> molecules)
         {
+            /* 
+             // Bu kısım paper daki hali
             var avareageFittness = molecules.Select(m => m.Fittness).Average();
 
             Temperature -= (1 / avareageFittness);
+            */
+
+            var avareageFittness = molecules.Select(m => m.Fittness).Average();
+
+            var orderedMolecules = molecules.OrderByDescending(a => a.Fittness);
+
+            var bestFittness = orderedMolecules.FirstOrDefault().Fittness;
+
+            var worstFittness = orderedMolecules.Last().Fittness;
+
+
+            var stage = (avareageFittness - worstFittness) / (bestFittness - worstFittness);
+
+            Temperature -= (1 / 1 - stage);
+
         }
 
         public void Movements(IEnumerable<Molecule> molecules)
@@ -83,11 +109,16 @@ namespace HeuristicAlgorithms.GBMO
             {
                 for (int i = 0; i < NumDimensions; i++)
                 {
-                    //TODO: Bu böyle çalışmaz.
-                    agent.Velocity[i] = agent.Velocity[i] + Math.Sqrt(3 * BoltzmanConstant * Temperature / agent.Mass);
+                    /* 
+                     // Bu kısım paper daki hali
+                            agent.Velocity[i] = agent.Velocity[i] + Math.Sqrt(3 * BoltzmanConstant * Temperature / agent.Mass);
+                    */
+
+                    agent.Velocity[i] = 4 * (rand.NextDouble() - 0.5) * Math.Sqrt(3 * BoltzmanConstant * Temperature / (agent.Mass + 0.001));
+
                     agent.Position[i] += agent.Velocity[i];
 
-                    agent.Position[i] += 0.2 - (0.5 / (2 * Math.PI)) * Math.Sin(2 * Math.PI * agent.Position[i]);
+                    agent.Position[i] += 0.2 - (0.5 / (2 * Math.PI)) * Math.Sin(2 * Math.PI * rand.NextDouble());
                 }
             }
         }
@@ -141,6 +172,21 @@ namespace HeuristicAlgorithms.GBMO
                 agents.Add(agent);
             }
             return agents;
+        }
+    }
+
+    public class CustomIteration : ICloneable 
+    {
+        public List<Molecule> Agents;
+        public double Temperature;
+
+
+        public object Clone()
+        {
+            return new CustomIteration
+            {
+                Agents = this.Agents.Select(a => (Molecule)a.Clone()).ToList()
+            };
         }
     }
 }

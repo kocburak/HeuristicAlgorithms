@@ -32,13 +32,18 @@ namespace HeuristicAlgorithms
             Console.WriteLine("Best Agent: " + algorithm.Iterations.OrderByDescending(i => i.Imperialists.Max(b => b.Cost)).FirstOrDefault().Imperialists.OrderByDescending(a => a.Cost).FirstOrDefault());
             Console.ReadKey();*/
 
-            GasesBrownianMotionOptimization algorithm = new GasesBrownianMotionOptimization(new f37(), 10, 2, 5000, -5.12, 5.12);
-            algorithm.FindSolution();
+            while (true)
+            {
 
-            var last = algorithm.Iterations[algorithm.Iterations.Count - 1].Agents;
-            Console.WriteLine("Best Fittness: " + algorithm.Iterations.Max(A => A.Agents.Max(q => q.Fittness)));
-            Console.WriteLine("Best Agent: " + algorithm.Iterations.SelectMany(a=> a.Agents).OrderByDescending(i => i.Fittness).FirstOrDefault());
-            Console.ReadKey();
+
+                GasesBrownianMotionOptimization algorithm = new GasesBrownianMotionOptimization(new f37(), 10, 2, 5000, -5.12, 5.12);
+                algorithm.FindSolution();
+
+                var last = algorithm.Iterations[algorithm.Iterations.Count - 1].Agents;
+                Console.WriteLine("Best Fittness: " + algorithm.Iterations.Max(A => A.Agents.Max(q => q.Fittness)));
+                Console.WriteLine("Best Agent: " + algorithm.Iterations.SelectMany(a => a.Agents).OrderByDescending(i => i.Fittness).FirstOrDefault());
+                Console.ReadKey();
+            }
         }
 
 
@@ -49,7 +54,7 @@ namespace HeuristicAlgorithms
         public double Calculate(double[] input)
         {
             //��z�m� istenen fonksiyon	
-            double r = Math.PI / 180;
+           // double r = Math.PI / 180;
             double top1 = /* - */(1 + Math.Cos((12 * Math.Sqrt(input[0] * input[0] + input[1] * input[1])))) / (0.5 * (input[0] * input[0] + input[1] * input[1]) + 2.0);
             return top1;
         }

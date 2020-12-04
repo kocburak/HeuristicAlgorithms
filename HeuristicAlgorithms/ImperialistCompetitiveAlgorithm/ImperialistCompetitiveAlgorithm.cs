@@ -25,6 +25,8 @@ namespace HeuristicAlgorithms.ICA
         private double RevolutionRate = 0.02;
         private double zeta = 0.02; // Total Cost of Empire = Cost of Imperialist + Zeta * mean(Cost of All Colonies)
 
+        //https://www.researchgate.net/post/Can-anyone-help-me-with-the-Imperialist-Competitive-Algorithm
+
         public ImperialistCompetitiveAlgorithm(IFitFunction function, int numCountry, int numImperialist, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
         {
             MaxIteration = maxIteration;

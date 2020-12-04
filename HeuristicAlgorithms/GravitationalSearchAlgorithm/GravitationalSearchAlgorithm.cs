@@ -28,6 +28,9 @@ namespace HeuristicAlgorithms.GSA
 
         }
 
+
+        //https://www.sciencedirect.com/science/article/pii/S0142061514002440#b0140
+
         public double CalculateEuclidianDistance(Agent a, Agent b)
         {
             double sumOfSquares = 0;
