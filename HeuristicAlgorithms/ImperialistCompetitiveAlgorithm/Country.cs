@@ -77,8 +77,8 @@ namespace HeuristicAlgorithms.ICA
                 PowerOfEmpire = this.PowerOfEmpire,
                 NormalizedPowerOfEmpire = this.NormalizedPowerOfEmpire,
                 PossessionProbability = this.PossessionProbability,
-                Position = this.Position.Select(p => p).ToArray(),
-                Colonies = this.Colonies?.Select(p => p).ToList()
+                Position = this.Position.Select(p =>  p).ToArray(),
+                Colonies = this.Colonies?.Select(p => (Country) p.Clone()).ToList()
             };
         }
     }

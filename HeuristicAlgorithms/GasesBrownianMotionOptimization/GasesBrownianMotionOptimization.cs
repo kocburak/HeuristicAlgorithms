@@ -15,14 +15,16 @@ namespace HeuristicAlgorithms.GBMO
         public double MaxSearchValue;
         public IFitFunction Function;
 
+        public OptimizationType OptimizationType;
+
 
         private readonly Random rand = new Random();
 
 
-        private double Temperature = 297;
-        private double BoltzmanConstant = 1.38e-4;
+        private double Temperature = 1000;
+        private double BoltzmanConstant = 1000;
 
-        public GasesBrownianMotionOptimization(IFitFunction function, int numAgents, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
+        public GasesBrownianMotionOptimization(IFitFunction function, OptimizationType optimizationType, int numAgents, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
         {
             MaxIteration = maxIteration;
             NumAgents = numAgents;
@@ -30,6 +32,7 @@ namespace HeuristicAlgorithms.GBMO
             MinSearchValue = minSearchValue;
             MaxSearchValue = maxSearchValue;
             Function = function;
+            OptimizationType = optimizationType;
         }
 
 
@@ -90,7 +93,16 @@ namespace HeuristicAlgorithms.GBMO
 
             var avareageFittness = molecules.Select(m => m.Fittness).Average();
 
-            var orderedMolecules = molecules.OrderByDescending(a => a.Fittness);
+            IEnumerable<Molecule> orderedMolecules = null;
+
+            if (OptimizationType == OptimizationType.Maximization)
+            {
+                orderedMolecules = molecules.OrderByDescending(a => a.Fittness);
+            }
+            else if (OptimizationType == OptimizationType.Minimization)
+            {
+                orderedMolecules = molecules.OrderBy(a => a.Fittness);
+            }
 
             var bestFittness = orderedMolecules.FirstOrDefault().Fittness;
 
@@ -99,7 +111,9 @@ namespace HeuristicAlgorithms.GBMO
 
             var stage = (avareageFittness - worstFittness) / (bestFittness - worstFittness);
 
-            Temperature -= (1 / 1 - stage);
+            //       Temperature -= (1 / 1 - stage);
+
+            Temperature -= (1 / avareageFittness);
 
         }
 
@@ -114,11 +128,12 @@ namespace HeuristicAlgorithms.GBMO
                             agent.Velocity[i] = agent.Velocity[i] + Math.Sqrt(3 * BoltzmanConstant * Temperature / agent.Mass);
                     */
 
-                    agent.Velocity[i] = 4 * (rand.NextDouble() - 0.5) * Math.Sqrt(3 * BoltzmanConstant * Temperature / (agent.Mass + 0.001));
+
+                    agent.Velocity[i] += 2*(rand.NextDouble() - 0.5) * Math.Sqrt(3 * BoltzmanConstant * Temperature / (agent.Mass +  0.0001));
 
                     agent.Position[i] += agent.Velocity[i];
 
-                    agent.Position[i] += 0.2 - (0.5 / (2 * Math.PI)) * Math.Sin(2 * Math.PI * rand.NextDouble());
+                    agent.Position[i] += (0.2 - (0.5 / (2 * Math.PI)) * Math.Sin(2 * Math.PI * agent.Position[i])) % 1;
                 }
             }
         }
@@ -126,9 +141,20 @@ namespace HeuristicAlgorithms.GBMO
         private void CalculateMass(IEnumerable<Molecule> molecules)
         {
 
-            var bestFittness = molecules.OrderByDescending(a => a.Fittness).FirstOrDefault().Fittness;
+            IEnumerable<Molecule> orderedMolecules = null;
 
-            var worstFittness = molecules.OrderBy(a => a.Fittness).FirstOrDefault().Fittness;
+            if (OptimizationType == OptimizationType.Maximization)
+            {
+                orderedMolecules = molecules.OrderByDescending(a => a.Fittness);
+            }
+            else if (OptimizationType == OptimizationType.Minimization)
+            {
+                orderedMolecules = molecules.OrderBy(a => a.Fittness);
+            }
+
+            var bestFittness = orderedMolecules.FirstOrDefault().Fittness;
+
+            var worstFittness = orderedMolecules.Last().Fittness;
 
 
             foreach (Molecule molecule in molecules)
@@ -136,12 +162,6 @@ namespace HeuristicAlgorithms.GBMO
                 molecule.Mass = (molecule.Fittness - worstFittness) / (bestFittness - worstFittness);
             }
 
-            double totalMass = molecules.Select(a => a.Mass).Sum();
-
-            foreach (Molecule molecule in molecules)
-            {
-                molecule.Mass /= totalMass;
-            }
 
         }
 

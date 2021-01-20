@@ -14,10 +14,11 @@ namespace HeuristicAlgorithms.GSA
         public double MinSearchValue;
         public double MaxSearchValue;
         public IFitFunction Function;
+        public OptimizationType OptimizationType;
 
         private readonly Random rand = new Random();
 
-        public GravitationalSearchAlgorithm(IFitFunction function, int numAgents, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
+        public GravitationalSearchAlgorithm(IFitFunction function, OptimizationType optimizationType, int numAgents, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
         {
             MaxIteration = maxIteration;
             NumAgents = numAgents;
@@ -25,6 +26,7 @@ namespace HeuristicAlgorithms.GSA
             MinSearchValue = minSearchValue;
             MaxSearchValue = maxSearchValue;
             Function = function;
+            OptimizationType = optimizationType;
 
         }
 
@@ -43,7 +45,7 @@ namespace HeuristicAlgorithms.GSA
 
         public double CalculateGravitationalConstant()
         {
-            return 100.0 * Math.Exp(-20.0 * (Iterations.Count - 1) / MaxIteration); //Equation 28
+            return 100.0 * Math.Exp(-20.0 * Iterations.Count/ MaxIteration); //Equation 28
         }
 
         public void CalculateFitness(Iteration<Agent> iteration)
@@ -81,9 +83,22 @@ namespace HeuristicAlgorithms.GSA
 
                 CalculateFitness(currentIteration);
 
-                var bestFittnessAgent = currentIteration.Agents.OrderBy(a => a.Fittness).FirstOrDefault();
+                IEnumerable<Agent> orderedAgents = null;
 
-                var worstFittnessAgent = currentIteration.Agents.OrderByDescending(a => a.Fittness).FirstOrDefault();
+                if (OptimizationType == OptimizationType.Maximization)
+                {
+                    orderedAgents = currentIteration.Agents.OrderByDescending(a => a.Fittness);
+                }
+                else if (OptimizationType == OptimizationType.Minimization)
+                {
+                    orderedAgents = currentIteration.Agents.OrderBy(a => a.Fittness);
+                }
+
+                currentIteration.Agents = orderedAgents.ToList();
+
+                var bestFittnessAgent = orderedAgents.FirstOrDefault();
+
+                var worstFittnessAgent = orderedAgents.Last();
 
                 CalculateMass(currentIteration, bestFittnessAgent.Fittness, worstFittnessAgent.Fittness);
 
@@ -110,9 +125,13 @@ namespace HeuristicAlgorithms.GSA
 
         public void CalculateGravField(Iteration<Agent> iteration, double gravitationalConst)
         {
+
+
             double epsilon = 0.001;
 
-            for (int i = 0; i < iteration.Agents.Count; i++)
+
+
+            for (int i = 0; i < NumAgents - NumAgents * Iterations.Count / MaxIteration; i++)
             {
                 Agent agent1 = iteration.Agents[i];
                 for (int j = 0; j < iteration.Agents.Count; j++)

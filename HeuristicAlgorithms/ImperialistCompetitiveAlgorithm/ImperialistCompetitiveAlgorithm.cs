@@ -18,6 +18,7 @@ namespace HeuristicAlgorithms.ICA
         public double MinSearchValue;
         public double MaxSearchValue;
         public IFitFunction Function;
+        public OptimizationType OptimizationType;
 
         private readonly Random rand = new Random();
 
@@ -27,7 +28,7 @@ namespace HeuristicAlgorithms.ICA
 
         //https://www.researchgate.net/post/Can-anyone-help-me-with-the-Imperialist-Competitive-Algorithm
 
-        public ImperialistCompetitiveAlgorithm(IFitFunction function, int numCountry, int numImperialist, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
+        public ImperialistCompetitiveAlgorithm(IFitFunction function, OptimizationType optimizationType, int numCountry, int numImperialist, int numDimensions, int maxIteration, double minSearchValue, double maxSearchValue)
         {
             MaxIteration = maxIteration;
             NumCountry = numCountry;
@@ -36,6 +37,7 @@ namespace HeuristicAlgorithms.ICA
             MaxSearchValue = maxSearchValue;
             Function = function;
             NumImperialist = numImperialist;
+            OptimizationType = optimizationType;
 
         }
 
@@ -105,12 +107,26 @@ namespace HeuristicAlgorithms.ICA
                 imperialist.PossessionProbability = (imperialist.NormalizedPowerOfEmpire / Imperialists.Select(i => i.NormalizedPowerOfEmpire).Max()) - rand.NextDouble();
             }
 
-            var weakestEmpire = Imperialists.OrderBy(i => i.PowerOfEmpire).FirstOrDefault();
-
-            var weakestColonyOfWeakestEmpire = weakestEmpire.Colonies.OrderBy(c => c.Cost).FirstOrDefault(); //TODO: minimization mı olduğu burda belli oluyor. Şuan maximizaiton
 
 
-            var strongestEmpire = Imperialists.OrderByDescending(i => i.PossessionProbability).FirstOrDefault();
+            Empire weakestEmpire = null;
+            Empire strongestEmpire = null;
+            Country weakestColonyOfWeakestEmpire =null;
+
+            if (OptimizationType == OptimizationType.Maximization)
+            {
+                weakestEmpire = Imperialists.OrderBy(i => i.PowerOfEmpire).FirstOrDefault();
+                weakestColonyOfWeakestEmpire = weakestEmpire.Colonies.OrderBy(c => c.Cost).FirstOrDefault();
+
+                strongestEmpire = Imperialists.OrderByDescending(i => i.PossessionProbability).FirstOrDefault();
+            }
+            else if (OptimizationType == OptimizationType.Minimization)
+            {
+                weakestEmpire = Imperialists.OrderByDescending(i => i.PowerOfEmpire).FirstOrDefault();
+                weakestColonyOfWeakestEmpire = weakestEmpire.Colonies.OrderByDescending(c => c.Cost).FirstOrDefault();
+                strongestEmpire = Imperialists.OrderBy(i => i.PossessionProbability).FirstOrDefault();
+            }
+
 
             weakestEmpire.Colonies.Remove(weakestColonyOfWeakestEmpire);
             strongestEmpire.Colonies.Add(weakestColonyOfWeakestEmpire);
@@ -141,6 +157,8 @@ namespace HeuristicAlgorithms.ICA
                 }
 
                 var newCountries = GenerateRandomCountry(numRevolutionColonies);
+
+                CalculateCosts(newCountries);
 
                 imperialist.Colonies.AddRange(newCountries);
 
@@ -190,6 +208,9 @@ namespace HeuristicAlgorithms.ICA
 
                         colony.Position[i] = colony.Position[i] + AssimilationCoeff * rand.NextDouble() * positionDiff;
 
+                        if (colony.Position[i] > MaxSearchValue) colony.Position[i] = MaxSearchValue;
+                        else if (colony.Position[i] < MinSearchValue) colony.Position[i] = MinSearchValue;
+
                     }
 
                 }
@@ -201,19 +222,23 @@ namespace HeuristicAlgorithms.ICA
         private void AssignCountriesToImperialists(List<Country> Colonies, IEnumerable<Empire> Imperialists)
         {
 
-            var totalNumColonies = NumCountry - NumImperialist;
+                var totalNumColonies = NumCountry - NumImperialist;
             //Assign colonies to Emperialists randomly
             foreach (Empire imperialist in Imperialists)
             {
                 imperialist.Colonies = new List<Country>();
 
-                var numOfColonies = (int)Math.Round(imperialist.NormalizedPower * totalNumColonies);
+                var numOfColonies = (int)Math.Ceiling(imperialist.NormalizedPower * totalNumColonies);
 
                 for (int i = 0; i < numOfColonies; i++)
                 {
                     if (Colonies.Count == 0)
+                    {
+
                         Colonies = GenerateRandomCountry(numOfColonies - i);
 
+                        CalculateCosts(Colonies);
+                    }
                     var randomColony = Colonies[rand.Next(0, Colonies.Count - 1)];
 
                     imperialist.Colonies.Add(randomColony);
@@ -229,8 +254,18 @@ namespace HeuristicAlgorithms.ICA
         private List<Empire> SelectImperialists(List<Country> Colonies)
         {
 
-            //initial Emperialists
-            var Imperialists = Colonies.OrderByDescending(c => c.Cost).Take(NumImperialist); //TODO: minimization mı olduğu burda belli oluyor. Şuan maximizaiton
+
+
+            IEnumerable<Country> Imperialists = null;
+
+            if (OptimizationType == OptimizationType.Maximization)
+            {
+                Imperialists = Colonies.OrderByDescending(c => c.Cost).Take(NumImperialist);
+            }
+            else if (OptimizationType == OptimizationType.Minimization)
+            {
+                Imperialists = Colonies.OrderBy(c => c.Cost).Take(NumImperialist);
+            }
 
             var Imp = new List<Empire>();
 
